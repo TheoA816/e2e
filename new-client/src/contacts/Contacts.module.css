@@ -1,0 +1,59 @@
+/* import { createHotContext as __vite__createHotContext } from "/@vite/client";import.meta.hot = __vite__createHotContext("/src/contacts/Contacts.module.css");import { updateStyle as __vite__updateStyle, removeStyle as __vite__removeStyle } from "/@vite/client"
+const __vite__id = "/Users/teeho/Desktop/COMP6841/e2e/client/src/contacts/Contacts.module.css"
+const __vite__css = "._container_q65fl_1 {\n    position: relative;\n    height: 100%;\n\n    background-color: grey;\n\n    display: flex;\n    flex-direction: column;\n    align-items: center;\n    gap: 20px;\n}\n\n._form_q65fl_13 {\n    width: 90%;\n    margin-top: 3px;\n}\n\n._input_q65fl_18 {\n    width: 100%;\n    box-sizing: border-box;\n}\n\n._contactList_q65fl_23 {\n    width: 100%;\n}\n\n._contactList_q65fl_23 ._contact_q65fl_23:first-child {\n    border-top: 1px black solid;\n}\n\n._contact_q65fl_23 {\n    background-color: antiquewhite;\n    width: 100%;\n    border-bottom: 1px black solid;\n}\n\n._contact_q65fl_23:hover {\n    cursor: pointer;\n    background-color: #fdf6ed;\n}"
+__vite__updateStyle(__vite__id, __vite__css)
+export const container = "_container_q65fl_1";
+export const form = "_form_q65fl_13";
+export const input = "_input_q65fl_18";
+export const contactList = "_contactList_q65fl_23";
+export const contact = "_contact_q65fl_23";
+export default {
+	container: container,
+	form: form,
+	input: input,
+	contactList: contactList,
+	contact: contact
+};
+
+import.meta.hot.prune(() => __vite__removeStyle(__vite__id)) */
+
+.container {
+    position: relative;
+    height: 100%;
+
+    background-color: grey;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.form {
+    width: 90%;
+    margin-top: 3px;
+}
+
+.input {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.contactList {
+    width: 100%;
+}
+
+.contactList .contact:first-child {
+    border-top: 1px black solid;
+}
+
+.contact {
+    background-color: antiquewhite;
+    width: 100%;
+    border-bottom: 1px black solid;
+}
+
+.contact:hover {
+    cursor: pointer;
+    background-color: #fdf6ed;
+}

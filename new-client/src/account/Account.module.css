@@ -1,0 +1,30 @@
+/* import { createHotContext as __vite__createHotContext } from "/@vite/client";import.meta.hot = __vite__createHotContext("/src/account/Account.module.css");import { updateStyle as __vite__updateStyle, removeStyle as __vite__removeStyle } from "/@vite/client"
+const __vite__id = "/Users/teeho/Desktop/COMP6841/e2e/client/src/account/Account.module.css"
+const __vite__css = "._container_jghsu_1 {\n    position: fixed;\n    top: 0;\n    right: 0;\n}\n\n.popup-content {\n    width: 50vw;\n    height: 50vh;\n    background-color: rgb(5, 26, 0);\n    color: white;\n    font-size: 2em;\n\n    display: flex;\n    flex-direction: column;\n    justify-content: center;\n    align-items: center;\n}"
+__vite__updateStyle(__vite__id, __vite__css)
+export const container = "_container_jghsu_1";
+export default {
+	container: container
+};
+
+import.meta.hot.prune(() => __vite__removeStyle(__vite__id)) */
+
+
+.container {
+    position: fixed;
+    top: 0;
+    right: 0;
+}
+
+.popup-content {
+    width: 50vw;
+    height: 50vh;
+    background-color: rgb(5, 26, 0);
+    color: white;
+    font-size: 2em;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}

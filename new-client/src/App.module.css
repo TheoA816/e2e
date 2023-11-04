@@ -1,0 +1,24 @@
+/* import { createHotContext as __vite__createHotContext } from "/@vite/client";import.meta.hot = __vite__createHotContext("/src/App.module.css");import { updateStyle as __vite__updateStyle, removeStyle as __vite__removeStyle } from "/@vite/client"
+const __vite__id = "/Users/teeho/Desktop/COMP6841/e2e/client/src/App.module.css"
+const __vite__css = "._container_10rjl_1 {\n    width: 98vw;\n    height: 95vh;\n    border: 5px black solid;\n\n    position: absolute;\n    top: 50%;\n    left: 50%;\n    transform: translate(-50%, -50%);\n\n    display: flex;\n    justify-content: space-between;\n}"
+__vite__updateStyle(__vite__id, __vite__css)
+export const container = "_container_10rjl_1";
+export default {
+	container: container
+};
+
+import.meta.hot.prune(() => __vite__removeStyle(__vite__id)) */
+
+.container {
+	width: 98vw;
+	height: 95vh;
+	border: 5px black solid;
+
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+
+	display: flex;
+	justify-content: space-between;
+}
