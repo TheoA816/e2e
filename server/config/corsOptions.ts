@@ -3,7 +3,7 @@ const allowlist = [
   "http://localhost:5174"
 ];
 
-export const corsOptionsDelegate = (req, callback) => {
+export const corsOptionsDelegate = (req: any, callback: any) => {
 
   let corsOptions = { 
     origin: false,

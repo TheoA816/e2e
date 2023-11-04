@@ -144,7 +144,7 @@ io.on('connection', (socket) => {
     if (socket_user.length !== 0) delete users[socket_user];
   });
 
-  socket.on('user-connect', (user) => {
+  socket.on('user-connect', (user: string) => {
     socket_user = user;
     users[user] = socket;
   });

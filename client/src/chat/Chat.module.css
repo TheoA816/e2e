@@ -1,4 +1,4 @@
-._container_1sur3_1 {
+.container {
     position: relative;
     flex-grow: 7;
     height: 100%;
@@ -9,7 +9,7 @@
     align-items: center;
 }
 
-._chatTitle_1sur3_12 {
+.chatTitle {
     font-size: 2em;
     background-color: aliceblue;
 
@@ -18,13 +18,13 @@
     box-sizing: border-box;
 }
 
-._messages_1sur3_21 {
+.messages {
     width: 98%;
     font-size: 1.5em;
     overflow-y: scroll;
 }
 
-._senderMssg_1sur3_27 {
+.senderMssg {
     margin: 2px 0 2px auto;
 
     width: fit-content;
@@ -34,7 +34,7 @@
     background-color: rgb(181, 218, 251);
 }
 
-._receiverMssg_1sur3_37 {
+.receiverMssg {
     margin: 2px auto 2px 0;
 
     width: fit-content;
@@ -44,11 +44,11 @@
     background-color: rgb(255, 159, 130);
 }
 
-._messageInput_1sur3_47 {
+.messageInput {
     width: 98%;
     margin-bottom: 5px;
 }
 
-._messageInput_1sur3_47 > input {
+.messageInput > input {
     width: 100%;
 }

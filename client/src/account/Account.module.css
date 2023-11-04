@@ -16,7 +16,7 @@ import.meta.hot.prune(() => __vite__removeStyle(__vite__id)) */
     right: 0;
 }
 
-.popup-content {
+:global(.popup-content) {
     width: 50vw;
     height: 50vh;
     background-color: rgb(5, 26, 0);
