@@ -47,6 +47,11 @@ const Contacts = ({ username, setCurChat, contacts, setContacts }: ContactsProps
     }
 
     // check contact exists
+    if (contact === username) {
+      alert("Cannot message yourself");
+      return;
+    }
+    
     const res = await fetch(`http://localhost:3001/contact/search?username=${contact}`);
     const found = await res.json();
 

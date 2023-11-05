@@ -316,7 +316,7 @@ const initChatRec = async(username: string, contact: string, packet: X3DH_Messag
     const ratchet = new UserRatchets();
     await ratchet.init(res.SK, false, username, contact);
     const cks = ratchet.new_cks();
-    await store_ck(username, contact, cks.rec_ck, cks.send_ck);
+    await store_ck(username, contact, cks.send_ck, cks.rec_ck);
 
     return { message: res.message };
   } catch (e) {
@@ -346,7 +346,7 @@ const chatDecrypt = async (user: string, contact: string, encrypted: string) => 
   try {
     const cks = await get_ck(user, contact);
     const ratchet = new UserRatchets();
-    ratchet.restore(cks.send_ck, cks.rec_ck, user, contact);
+    ratchet.restore(cks.send_ck, cks.rec_ck, contact, user);
     const decrypted = await ratchet.decrypt(encrypted);
     const new_cks = ratchet.new_cks();
     await store_ck(user, contact, new_cks.send_ck, new_cks.rec_ck);

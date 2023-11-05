@@ -46,7 +46,6 @@ class UserRatchets {
   }
 
   async restore (send_ck: string, recv_ck: string, sender: string, receiver: string) {
-    const sodium = await this.initSodium();
     this.send_ratchet = new Ratchet(send_ck);
     this.rec_ratchet = new Ratchet(recv_ck);
     this.AD = new TextEncoder().encode(sender + receiver);
@@ -54,13 +53,13 @@ class UserRatchets {
 
   async encrypt (message: string) {
     const mk = await this.send_ratchet.next();
-    console.log("Enrypt AD ", new TextDecoder().decode(this.AD))
+    // console.log("Encrypt MK ", mk, " AD ", this.AD, " ENCRYPTED ", await encryptMssg(message, mk, this.AD));
     return await encryptMssg(message, mk, this.AD);
   }
 
   async decrypt (encrypted: string) {
     const mk = await this.rec_ratchet.next();
-    console.log("Decrypt AD ", new TextDecoder().decode(this.AD))
+    // console.log("Decrypt MK ", mk, " AD ", this.AD, " ENCRYPTED ", encrypted);
     return await decryptMssg(encrypted, mk, this.AD);
   }
 

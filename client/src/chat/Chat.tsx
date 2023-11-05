@@ -74,8 +74,7 @@ const Chat = ({ username, curChat, socket, contacts, setContacts, messages, setM
 
       for (let mssg of mssgs) {
         const { sender, text } = mssg;
-        const res = await fetch(`http://localhost:3001/chat/decrypt?
-                                      encrypted=${text}&user=${username}&contact=${sender}`);
+        const res = await fetch(`http://localhost:3001/chat/decrypt?encrypted=${text}&user=${username}&contact=${sender}`);
         const decrypted = await res.json();
         decryptedMssgs.push((decrypted.length === 0) ? text : decrypted);
         if (decrypted.length === 0) sus_contacts.push(sender);
@@ -101,11 +100,12 @@ const Chat = ({ username, curChat, socket, contacts, setContacts, messages, setM
       setMessages(messages => {
         console.log("Load Temp Messages")
         const new_messages = { ...messages };
-        for (let mssg of mssgs) {
-          const { sender, text } = mssg;
+        for (let i in mssgs) {
+          const { sender, text } = mssgs[i];
+          const decrypted = decryptedMssgs[i];
           new_messages[sender] = [...new_messages[sender] ?? [], {
             senderId: 0,  // 1 send 0 receive
-            text: text
+            text: (decrypted.length === 0) ? text : decrypted
           }];
         }
         return new_messages;
@@ -148,8 +148,7 @@ const Chat = ({ username, curChat, socket, contacts, setContacts, messages, setM
       const incoming_contacts: string[] = [];
       console.log(`Message received from ${sender} and content ${text}`)
 
-      const res = await fetch(`http://localhost:3001/chat/decrypt?
-                                      encrypted=${text}&user=${username}&contact=${sender}`);
+      const res = await fetch(`http://localhost:3001/chat/decrypt?encrypted=${text}&user=${username}&contact=${sender}`);
       const decrypted = await res.json();
 
       // runs twice for some reason
@@ -191,7 +190,7 @@ const Chat = ({ username, curChat, socket, contacts, setContacts, messages, setM
 
     const verify = async () => {
 
-      const new_sus: string[] = [];
+      const not_sus: string[] = [];
       const init_messages: { [index: string]: string } = {};
 
       for (const contact of incoming) {
@@ -211,17 +210,15 @@ const Chat = ({ username, curChat, socket, contacts, setContacts, messages, setM
 
         const x3dh_message = await res.json();
 
-        if ('err' in x3dh_message) {
-          new_sus.push(contact);
-          return;
-        }
-
-        else {
+        if (!('err' in x3dh_message)) {
+          not_sus.push(contact);
           init_messages[contact] = x3dh_message.message;
         }
       }
       
-      setSus(sus => [...sus, ...new_sus]);
+      console.log(init_messages)
+      setSus(sus => sus.filter((s) => !not_sus.includes(s)));
+      
       setMessages(messages => {
         const new_messages = { ...messages };
         for (const contact in init_messages) {
@@ -277,6 +274,7 @@ const Chat = ({ username, curChat, socket, contacts, setContacts, messages, setM
     const form = e.target as HTMLFormElement;
     const input = form.children[0] as HTMLInputElement;
     let x3dh_message = null;
+    let is_first = false;
 
     // initial message
     if (!(curChat in messages) || messages[curChat].length === 0) {
@@ -294,6 +292,8 @@ const Chat = ({ username, curChat, socket, contacts, setContacts, messages, setM
       });
 
       x3dh_message = await res.json();
+      is_first = true;
+
       if ('err' in x3dh_message) {
         setSus(sus => [...sus, curChat]);
         return;
@@ -311,7 +311,8 @@ const Chat = ({ username, curChat, socket, contacts, setContacts, messages, setM
     socket.emit('message-out', {
       sender: username,
       receiver: curChat,
-      text: (x3dh_message) ? JSON.stringify(x3dh_message) : input.value
+      text: (x3dh_message) ? JSON.stringify(x3dh_message) : input.value,
+      is_first: is_first
     })
 
     input.value = '';

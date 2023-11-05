@@ -126,6 +126,7 @@ app.delete('/chat/load', async (req, res) => {
 app.get('/chat/decrypt', async (req, res) => {
 
   const { encrypted, user, contact } = req.query;
+  console.log(encrypted)
   const decrypted = await chatDecrypt(user as string, contact as string, encrypted as string);
   res.status(200).json(decrypted.message);
 })
@@ -165,9 +166,13 @@ io.on('connection', (socket) => {
 
   socket.on('message-out', async (data) => {
     const { sender, receiver, text, is_first } = data;
-    const encrypted = await chatEncrypt(sender, receiver, text);
+
+    let encrypted = { message: '' };
+    if (!is_first) encrypted = await chatEncrypt(sender, receiver, text);
+
     console.log(`Sending messages - users active`);
     console.log(Object.keys(users));
+    
     if (receiver in users) {
       users[receiver].emit('message-in', { sender: sender, text: (is_first) ? text : encrypted.message });
     } else {
