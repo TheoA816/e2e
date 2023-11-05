@@ -15,6 +15,10 @@ interface Message {
   text: string
 }
 
+interface MessagesStruct {
+  [index: string]: Message[]
+}
+
 interface X3DH_Message {
   ciphertext: string,
   sender_IK: string,
@@ -32,4 +36,4 @@ interface HexKeys {
   privateKey: string
 }
 
-export type { User, Err, Message, X3DH_Message, KeyPair, HexKeys }
+export type { User, Err, Message, MessagesStruct, X3DH_Message, KeyPair, HexKeys }

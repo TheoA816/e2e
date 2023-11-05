@@ -2,15 +2,16 @@ import { useEffect, useState } from 'react'
 import { Socket } from 'socket.io-client'
 import styles from './Account.module.css'
 import Popup from 'reactjs-popup'
+import { MessagesStruct } from '../types'
 
 interface AccountProps {
   username: string,
   setUsername: React.Dispatch<React.SetStateAction<string>>,
-  setCurChat: React.Dispatch<React.SetStateAction<string>>,
+  messages: MessagesStruct,
   socket: Socket
 }
 
-const Account = ({ username, setUsername, setCurChat, socket }: AccountProps) => {
+const Account = ({ username, setUsername, messages, socket }: AccountProps) => {
 
   const [open, setOpen] = useState(false);
   const [loginPopup, setLoginPopup] = useState(false);
@@ -27,6 +28,7 @@ const Account = ({ username, setUsername, setCurChat, socket }: AccountProps) =>
     const curUser = localStorage.getItem('username');
     if (curUser !== null) {
       setUsername(curUser);
+      socket.emit('user-connect', curUser);
     }
   }, [])
 
@@ -34,6 +36,7 @@ const Account = ({ username, setUsername, setCurChat, socket }: AccountProps) =>
 
     const form = e.target as HTMLFormElement;
     const input = form.children[0] as HTMLInputElement;
+    const user = input.value;
 
     const res = await fetch(`http://localhost:3001/signup`, {
       method: 'post',
@@ -41,7 +44,7 @@ const Account = ({ username, setUsername, setCurChat, socket }: AccountProps) =>
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        username: input.value
+        username: user
       })
     });
     const created = await res.json();
@@ -52,10 +55,10 @@ const Account = ({ username, setUsername, setCurChat, socket }: AccountProps) =>
       return;
     }
 
-    socket.emit('user-connect', input.value);
-    localStorage.setItem('username', input.value);
+    socket.emit('user-connect', user);
+    localStorage.setItem('username', user);
 
-    setUsername(input.value);
+    setUsername(user);
     setOpen(false);
   }
 
@@ -63,27 +66,47 @@ const Account = ({ username, setUsername, setCurChat, socket }: AccountProps) =>
 
     const form = e.target as HTMLFormElement;
     const input = form.children[0] as HTMLInputElement;
+    const user = input.value;
 
-    const res = await fetch(`http://localhost:3001/contact/search?username=${input.value}`);
+    const res = await fetch(`http://localhost:3001/contact/search?username=${user}`);
     const found = await res.json();
 
     if ('err' in found) {
-      alert(`User ${input.value} does not exist`);
+      alert(`User ${user} does not exist`);
       setOpen(false);
       return;
     }
 
-    socket.emit('user-connect', input.value);
-    localStorage.setItem('username', input.value);
+    socket.emit('user-connect', user);
+    localStorage.setItem('username', user);
 
-    setUsername(input.value);
+    setUsername(user);
     setOpen(false);
   }
 
-  const doLogout = () => {
+  const storeMessages = async () => {
+      
+    for (const contact in messages) {
+      console.log(`Saved chat with ${contact}`)
+      console.log(messages[contact])
+      await fetch(`http://localhost:3001/chat/store`, {
+        method: 'post',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          username: username,
+          contact: contact,
+          messages: messages[contact]
+        })
+      });
+    }
+  }
+
+  const doLogout = async () => {
+    await storeMessages();
     socket.emit('user-disconnect', username);
     setUsername('');
-    setCurChat('');
     localStorage.clear();
   }
 

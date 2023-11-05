@@ -1,7 +1,7 @@
 // EVENT LISTENER STORE BREAKING / RUNS ON LOAD FOR SOME REASON
 import { useEffect, useState } from 'react';
 import styles from './Chat.module.css';
-import { Message } from '../types';
+import { MessagesStruct } from '../types';
 import MessageBlock from './MessageBlock';
 import { Socket } from 'socket.io-client';
 
@@ -10,16 +10,13 @@ interface ChatProps {
   curChat: string,
   socket: Socket,
   contacts: string[],
-  setContacts: React.Dispatch<React.SetStateAction<string[]>>
+  setContacts: React.Dispatch<React.SetStateAction<string[]>>,
+  messages: MessagesStruct,
+  setMessages: React.Dispatch<React.SetStateAction<MessagesStruct>>
 }
 
-interface MessagesStruct {
-  [index: string]: Message[]
-}
+const Chat = ({ username, curChat, socket, contacts, setContacts, messages, setMessages }: ChatProps) => {
 
-const Chat = ({ username, curChat, socket, contacts, setContacts }: ChatProps) => {
-
-  const [messages, setMessages] = useState<MessagesStruct>({ '': [] });
   const [incoming, setIncoming] = useState<string[]>([]);
   const [sus, setSus] = useState<string[]>([]);
   const [init, setInit] = useState(false);
@@ -42,7 +39,6 @@ const Chat = ({ username, curChat, socket, contacts, setContacts }: ChatProps) =
   }
 
   // + load messages on change chat and get temp messages too - if not yet previously
-  // + store messages on logout
   useEffect(() => {
 
     const getMessages = async () => {
@@ -72,6 +68,18 @@ const Chat = ({ username, curChat, socket, contacts, setContacts }: ChatProps) =
 
       const mssgs: { sender: string, text: string }[] = await res.json();
       if (mssgs.length === 0) return false;
+
+      const decryptedMssgs: string[] = [];
+      const sus_contacts: string[] = [];
+
+      for (let mssg of mssgs) {
+        const { sender, text } = mssg;
+        const res = await fetch(`http://localhost:3001/chat/decrypt?
+                                      encrypted=${text}&user=${username}&contact=${sender}`);
+        const decrypted = await res.json();
+        decryptedMssgs.push((decrypted.length === 0) ? text : decrypted);
+        if (decrypted.length === 0) sus_contacts.push(sender);
+      }
 
       const incoming_contacts: string[] = [];
 
@@ -104,6 +112,7 @@ const Chat = ({ username, curChat, socket, contacts, setContacts }: ChatProps) =
       })
 
       setIncoming(incoming_contacts);
+      setSus(sus => [ ...sus, ...sus_contacts ]);
       return true;
     }
     
@@ -119,45 +128,53 @@ const Chat = ({ username, curChat, socket, contacts, setContacts }: ChatProps) =
       }
     }
 
-    loadAllMessages();
-    
-    // username == 0 so cannot store messages
-    // and if you set messages empty cant on listener
+    ///////////////////////////////// LOGOUT ///////////////////////////////
+    const logout = async () => {
+      if (username.length === 0 && contacts.length === 0 && curChat.length === 0) {
+        setInit(false);
+      }
+    }
 
-    // else {
-    //   storeMessages();
-    //   setMessages({ '': [] });
-    // }
+    loadAllMessages();
+    logout();
 
   }, [username, contacts]);
   
   // + Real-time message
   useEffect(() => {
 
-    const receiveMessage = (data: { sender: string, text: string }) => {
+    const receiveMessage = async (data: { sender: string, text: string }) => {
       const { sender, text } = data;
       const incoming_contacts: string[] = [];
       console.log(`Message received from ${sender} and content ${text}`)
+
+      const res = await fetch(`http://localhost:3001/chat/decrypt?
+                                      encrypted=${text}&user=${username}&contact=${sender}`);
+      const decrypted = await res.json();
+
       // runs twice for some reason
       setContacts(contacts => {
         const new_contacts = [ ...contacts ];
         if (!new_contacts.includes(sender)) {
           createContact(sender);
-          incoming_contacts.push(sender);
           new_contacts.push(sender);
         }
         return new_contacts;
       })
+
       setMessages(messages => {
         console.log("Setting Live Messages")
         const new_messages = { ...messages };
+        if (!(sender in new_messages) || new_messages[sender].length === 0) incoming_contacts.push(sender);
         new_messages[sender] = [...new_messages[sender] ?? [], {
           senderId: 0,  // 1 send 0 receive
-          text: text
+          text: (decrypted.length === 0) ? text : decrypted
         }];
         return new_messages;
       });
-      setIncoming(incoming_contacts)
+
+      setIncoming(incoming_contacts);
+      if (decrypted.length === 0) setSus(sus => [ ...sus, sender ])
     }
 
     socket.on('message-in', receiveMessage);
@@ -187,6 +204,7 @@ const Chat = ({ username, curChat, socket, contacts, setContacts }: ChatProps) =
           },
           body: JSON.stringify({
             username: username,
+            contact: contact,
             packet: JSON.parse(messages[contact][0].text)
           })
         });

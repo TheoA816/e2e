@@ -1,5 +1,6 @@
 import _sodium from "libsodium-wrappers";
 import { HexKeys, KeyPair, X3DH_Message } from "../types";
+import { decrypt, encrypt } from "./encryption";
 
 const initSodium = async () => {
     await _sodium.ready;
@@ -42,6 +43,7 @@ const keys_to_hex = async (keypair: KeyPair) => {
     return hex_keys;
 }
 
+// leave for now - look at signal docs
 const encodePK = (key: Uint8Array) => {
     return key;
 }
@@ -57,27 +59,32 @@ const verifyKey = async (verifyKey: Uint8Array, SK: Uint8Array, signature: Uint8
     return sodium.crypto_sign_verify_detached(signature, encodePK(SK), verifyKey);
 }
 
-// IK is Ed25519 (for signing) rest are X25519
+// Key Bundle Generation - IK is Ed25519 (for signing) rest are X25519
+const refillOkeys = async () => {
+    const OTK = await generateBundle(100);
+    const hex_OTK: HexKeys[] = [];
+    for (const keypair of OTK) {
+        hex_OTK.push(await keys_to_hex(keypair));
+    }
+    return hex_OTK;
+}
+
 const generateUserKeys = async () => {
     const sodium = await initSodium();
 
     const IK = await generateIK();
     const SP = await generateKeyPair();
     const SIGN = await signKey(IK.privateKey, SP.publicKey);
-    const OTK = await generateBundle(100);
 
     const hex_IK = await keys_to_hex(IK);
     const hex_SP = await keys_to_hex(SP);
     const hex_SIGN = sodium.to_hex(SIGN);
-
-    const hex_OTK: HexKeys[] = [];
-    for (const keypair of OTK) {
-        hex_OTK.push(await keys_to_hex(keypair));
-    }
+    const hex_OTK = await refillOkeys();
     
     return { hex_IK, hex_SP, hex_SIGN, hex_OTK };
 }
 
+// Helper Concat Buffers
 const concat = (arrays: Uint8Array[]) => {
 
     let totalLength = arrays.reduce((acc, value) => acc + value.length, 0);
@@ -94,7 +101,7 @@ const concat = (arrays: Uint8Array[]) => {
     return result;
 }
 
-// as in Signal spec
+// HKDF as per the rfc5869 spec
 const HKDF = async (fkm: Uint8Array) => {
     const sodium = await initSodium();
 
@@ -138,38 +145,7 @@ const HKDF = async (fkm: Uint8Array) => {
     return new Uint8Array(T.slice(0, L));
 }
 
-const encrypt = async (message: string, SK: Uint8Array, AD: Uint8Array) => {
-    const sodium = await initSodium();
-    const nonce = sodium.randombytes_buf(sodium.crypto_aead_xchacha20poly1305_IETF_NPUBBYTES);
- 
-    const encrypted = sodium.crypto_aead_xchacha20poly1305_ietf_encrypt(
-        message,
-        AD,
-        null,
-        nonce,
-        SK
-    );
-    
-    return sodium.to_hex(nonce) + sodium.to_hex(encrypted);
-}
-
-const decrypt = async (encrypted: string, SK: Uint8Array, AD: Uint8Array) => {
-    const sodium = await initSodium();
-    const sep = sodium.crypto_aead_xchacha20poly1305_IETF_NPUBBYTES * 2;
-    const nonce = sodium.from_hex(encrypted.slice(0, sep));
-    const ciphertext = sodium.from_hex(encrypted.slice(sep));
- 
-    const decrypted = sodium.crypto_aead_xchacha20poly1305_ietf_decrypt(
-        null,
-        ciphertext,
-        AD,
-        nonce,
-        SK
-    );
-
-    return new TextDecoder().decode(decrypted);
-}
-
+// X3DH
 const x3dh_send_SK = async (IK_PRIV: string, r_IK: string, 
                             r_SP: string, r_sign: string, r_OTK: string) => {
 
@@ -218,11 +194,14 @@ const x3dh_send = async (IK_PUB: string, IK_PRIV: string, r_IK: string,
         const AD = concat([encodePK(ik), encodePK(rec_ik)]);
         const encrypted = await encrypt(message, SK, AD);
         return {
-            ciphertext: encrypted,
-            sender_IK: IK_PUB,
-            sender_eph: sodium.to_hex(eph_PK),
-            OTK: r_OTK
-        } as X3DH_Message
+            message: {
+                ciphertext: encrypted,
+                sender_IK: IK_PUB,
+                sender_eph: sodium.to_hex(eph_PK),
+                OTK: r_OTK
+            } as X3DH_Message,
+            SK: sodium.to_hex(SK)
+        }
     } catch (e) {
         throw (e)
     }
@@ -263,7 +242,10 @@ const x3dh_rec = async (s_IK: string, EPH: string, IK_PUB: string, IK_PRIV: stri
         const sender_ik = sodium.from_hex(s_IK);
         const AD = concat([encodePK(sender_ik), encodePK(ik)]);
         const decrypted = await decrypt(ciphertext, SK, AD);
-        return decrypted;
+        return {
+            message: decrypted,
+            SK: sodium.to_hex(SK)
+        };
     } catch (e) {
         throw (e)
     }
@@ -276,4 +258,4 @@ const x3dh_rec = async (s_IK: string, EPH: string, IK_PUB: string, IK_PRIV: stri
     // console.log(await decrypt(e, new Uint8Array(32), new Uint8Array(32)))
 })()
 
-export { generateUserKeys, x3dh_send, x3dh_rec }
+export { refillOkeys, generateUserKeys, x3dh_send, x3dh_rec }

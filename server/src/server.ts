@@ -6,7 +6,7 @@ import { corsOptionsDelegate } from '../config/corsOptions';
 
 import { Server, Socket } from 'socket.io';
 
-import { createAccount, createContact, errHandler, findAccount, getContacts, getMessages, getTempMessages, initChatRec, initChatSend, saveTempMessages, storeMessages } from './helpers';
+import { chatDecrypt, chatEncrypt, createAccount, createContact, errHandler, findAccount, getContacts, getMessages, getTempMessages, initChatRec, initChatSend, saveTempMessages, storeMessages } from './helpers';
 
 dotenv.config();
 
@@ -84,10 +84,10 @@ app.post('/chat/start', async (req, res) => {
 
 app.post('/chat/verify', async (req, res) => {
 
-  const { username, packet } = req.body;
+  const { username, contact, packet } = req.body;
 
   // X3DH
-  const chatRes = await initChatRec(username, packet);
+  const chatRes = await initChatRec(username, contact, packet);
   console.log("Final")
   console.log(chatRes)
   if ('err' in chatRes) res.status(400).json({ 'err': errHandler(chatRes.err) });
@@ -107,6 +107,8 @@ app.get('/chat/messages', async (req, res) => {
 app.post('/chat/store', async (req, res) => {
 
   const { username, contact, messages } = req.body;
+  console.log("Storing messages");
+  console.log(messages)
   const storeRes = await storeMessages(username, contact, messages);
   res.status(200).json();
   return;
@@ -119,6 +121,13 @@ app.delete('/chat/load', async (req, res) => {
 
   res.status(200).json(mssgs);
   return;
+})
+
+app.get('/chat/decrypt', async (req, res) => {
+
+  const { encrypted, user, contact } = req.query;
+  const decrypted = await chatDecrypt(user as string, contact as string, encrypted as string);
+  res.status(200).json(decrypted.message);
 })
 
 server.listen(port, () => {
@@ -155,13 +164,14 @@ io.on('connection', (socket) => {
   });
 
   socket.on('message-out', async (data) => {
-    const { sender, receiver, text } = data;
+    const { sender, receiver, text, is_first } = data;
+    const encrypted = await chatEncrypt(sender, receiver, text);
     console.log(`Sending messages - users active`);
     console.log(Object.keys(users));
     if (receiver in users) {
-      users[receiver].emit('message-in', { sender: sender, text: text });
+      users[receiver].emit('message-in', { sender: sender, text: (is_first) ? text : encrypted.message });
     } else {
-      await saveTempMessages(sender, receiver, text);
+      await saveTempMessages(sender, receiver, (is_first) ? text : encrypted.message);
     }
   });
 })
